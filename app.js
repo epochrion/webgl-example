@@ -15,10 +15,10 @@ export default (gl: WebGLRenderingContext, initialProps: *) => {
     canvas: {
       width,
       height,
-	  style: {},
+      style: {},
       clientWidth: width,
-	  clientHeight: height,
-	  addEventListener: () => {},
+      clientHeight: height,
+      addEventListener: () => {},
       removeEventListener: () => {}
     },
     context: gl
@@ -35,56 +35,56 @@ export default (gl: WebGLRenderingContext, initialProps: *) => {
   
   function init() {
     camera = new THREE.PerspectiveCamera(30, width / height, 1, 1000);
-	
-	camera.position.x = 0;
-	camera.position.y = 0;
-	camera.position.z = 500;
+	  
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = 500;
 	
     scene = new THREE.Scene();
 	
-	imageSize = 30;
+    imageSize = 30;
+
+    gridWidth = 5;
+    gridHeight = 5;
 	
-	gridWidth = 5;
-	gridHeight = 5;
-	
-	renderGrid();
+    renderGrid();
   }
   
   function animate() {
-	requestId = requestAnimationFrame(animate);
+    requestId = requestAnimationFrame(animate);
     renderer.render(scene, camera);
     gl.flush();
     glex.endFrame();
   }
   
   function renderGrid() {
-	let gridPositions = getGridPositions();
+    let gridPositions = getGridPositions();
 	
-	let geometry, materials, mesh, tileImage;
+    let geometry, materials, mesh, tileImage;
 	
-	for (let k = 0; k < (gridWidth*gridHeight); k++){
-	  tileImage = "http://www.logologo.com/logos/environment-logo.jpg";
-	  materials = loadTexture(tileImage);
-	  geometry = new THREE.PlaneGeometry(imageSize, imageSize, 1, 1);
-	  mesh = new THREE.Mesh(geometry,materials);
-	  mesh.geometry.computeBoundingBox();
-	  mesh.position.set(gridPositions[k][0],gridPositions[k][1],0);
-	  scene.add(mesh);
+    for (let k = 0; k < (gridWidth*gridHeight); k++){
+      tileImage = "http://www.logologo.com/logos/environment-logo.jpg";
+      materials = loadTexture(tileImage);
+      geometry = new THREE.PlaneGeometry(imageSize, imageSize, 1, 1);
+      mesh = new THREE.Mesh(geometry,materials);
+      mesh.geometry.computeBoundingBox();
+      mesh.position.set(gridPositions[k][0],gridPositions[k][1],0);
+      scene.add(mesh);
     }
   }
   
   function getGridPositions() {
-	let gridArray = [];
-	let counter = 0;
-	let x = Math.floor(gridWidth/2);
-	let y = Math.floor(gridHeight/2);
-	for (let j = y; j >= -y; j--) { // y : up ---> down
-	  for (let i = -x; i <= x; i++) { // x : left ---> right
-	    gridArray[counter] = [i*imageSize,j*imageSize];
+    let gridArray = [];
+    let counter = 0;
+    let x = Math.floor(gridWidth/2);
+    let y = Math.floor(gridHeight/2);
+    for (let j = y; j >= -y; j--) { // y : up ---> down
+      for (let i = -x; i <= x; i++) { // x : left ---> right
+        gridArray[counter] = [i*imageSize,j*imageSize];
         counter += 1;
-	  }
-	}
-	return gridArray;
+      }
+    }
+    return gridArray;
   }
   
   function loadTexture(src) {
@@ -104,7 +104,7 @@ export default (gl: WebGLRenderingContext, initialProps: *) => {
   
   return {
     onPropsChange({ fov, touching, touchPosition }: *) {
-	  // nothing to do here currently...
+      // nothing to do here currently...
     },
     dispose() {
       cancelAnimationFrame(requestId);
