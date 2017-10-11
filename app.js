@@ -1,11 +1,32 @@
-/* @flow */
+import React, { Component } from "react";
+import { WebGLView } from "react-native-webgl";
 
 const THREE = require('three');
 global.THREE = THREE;
 
 require("three/examples/js/renderers/Projector");
 
-export default (gl: WebGLRenderingContext, initialProps: *) => {
+export default () => {
+  class Example extends Component {
+    constructor(props) {
+      super(props);
+    }
+    onContextCreate = (gl: WebGLRenderingContext) => {
+      this.callbacks = renderExample(gl, this.props);
+    }
+    componentWillUnmount() {
+      if (this.callbacks) this.callbacks.dispose();
+    }
+    render() {
+      return (
+        <WebGLView style={this.props.style} onContextCreate={this.onContextCreate} />
+      );
+    }
+  };
+  return Example;
+};
+
+renderExample = (gl: WebGLRenderingContext, initialProps: *) => {
   
   const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
   
@@ -25,66 +46,70 @@ export default (gl: WebGLRenderingContext, initialProps: *) => {
   });
   
   renderer.setSize(width, height);
-  renderer.setClearColor(0xDDFFDD, 1);
+  renderer.setClearColor(0x000000, 1);
 
   let camera, scene, requestId;
-  let imageSize, gridWidth, gridHeight;
+  
+  let imageSize = 100;
+  let meshArray = [];
+  let frameCount = 0;
   
   init();
   animate();
   
   function init() {
     camera = new THREE.PerspectiveCamera(30, width / height, 1, 1000);
-	  
+  
     camera.position.x = 0;
     camera.position.y = 0;
     camera.position.z = 500;
-	
+  
     scene = new THREE.Scene();
-	
-    imageSize = 30;
-
-    gridWidth = 5;
-    gridHeight = 5;
-	
-    renderGrid();
   }
   
   function animate() {
     requestId = requestAnimationFrame(animate);
     renderer.render(scene, camera);
+    frameCount += 1;
+    if(!(frameCount%60)){
+      console.log("Creating Image!");
+      renderImage();
+    }
+    if(!((frameCount%60)-30) && frameCount > 60){
+      console.log("Removing Image!");
+      disposeImage();
+    }
     gl.flush();
     glex.endFrame();
   }
   
-  function renderGrid() {
-    let gridPositions = getGridPositions();
-	
-    let geometry, materials, mesh, tileImage;
-	
-    for (let k = 0; k < (gridWidth*gridHeight); k++){
-      tileImage = "http://www.logologo.com/logos/environment-logo.jpg";
-      materials = loadTexture(tileImage);
-      geometry = new THREE.PlaneGeometry(imageSize, imageSize, 1, 1);
-      mesh = new THREE.Mesh(geometry,materials);
-      mesh.geometry.computeBoundingBox();
-      mesh.position.set(gridPositions[k][0],gridPositions[k][1],0);
-      scene.add(mesh);
-    }
+  function disposeImage() {
+    garbageCollection(meshArray[0]);
+    meshArray.splice(0,1);
   }
   
-  function getGridPositions() {
-    let gridArray = [];
-    let counter = 0;
-    let x = Math.floor(gridWidth/2);
-    let y = Math.floor(gridHeight/2);
-    for (let j = y; j >= -y; j--) { // y : up ---> down
-      for (let i = -x; i <= x; i++) { // x : left ---> right
-        gridArray[counter] = [i*imageSize,j*imageSize];
-        counter += 1;
-      }
-    }
-    return gridArray;
+  function garbageCollection(mesh) {
+    scene.remove(mesh);
+    mesh.geometry.dispose();
+    mesh.geometry = undefined;
+    mesh.material.map.dispose();
+    mesh.material.map = undefined;
+    mesh.material.dispose();
+    mesh.material = undefined;
+    mesh = undefined;
+  }
+  
+  function renderImage() {
+    let geometry, materials, mesh, tileImage;
+    tileImage = "http://www.logologo.com/logos/environment-logo.jpg";
+    materials = loadTexture(tileImage);
+    geometry = new THREE.PlaneGeometry(imageSize, imageSize, 1, 1);
+    mesh = new THREE.Mesh(geometry,materials);
+    mesh.geometry.computeBoundingBox();
+    mesh.position.set(0,0,10);
+    mesh.scale.set(1, 1, 1);
+    scene.add(mesh);
+    meshArray.push(mesh);
   }
   
   function loadTexture(src) {
@@ -103,9 +128,6 @@ export default (gl: WebGLRenderingContext, initialProps: *) => {
   }
   
   return {
-    onPropsChange({ fov, touching, touchPosition }: *) {
-      // nothing to do here currently...
-    },
     dispose() {
       cancelAnimationFrame(requestId);
     }
